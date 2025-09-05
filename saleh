@@ -2,95 +2,53 @@
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
-local player = Players.LocalPlayer
-local PlayerGui = player:WaitForChild("PlayerGui")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
 
--- GUI Setup
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "XeonLearningMenu"
-screenGui.Parent = PlayerGui
+-- GUI
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
-local frame = Instance.new("Frame")
-frame.Name = "MainFrame"
-frame.Size = UDim2.new(0, 350, 0, 500)
-frame.Position = UDim2.new(0.5, -175, 0.5, -250)
-frame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-frame.Visible = false
-frame.Parent = screenGui
+local Frame = Instance.new("Frame")
+Frame.Size = UDim2.new(0, 200, 0, 300)
+Frame.Position = UDim2.new(0.5, -100, 0.5, -150)
+Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+Frame.Visible = false
+Frame.Parent = ScreenGui
 
--- Title
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 50)
-title.Text = "Xeon Learning Menu"
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.BackgroundTransparency = 1
-title.Font = Enum.Font.SourceSansBold
-title.TextScaled = true
-title.Parent = frame
+local UIListLayout = Instance.new("UIListLayout")
+UIListLayout.Parent = Frame
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
--- Scrolling Frame for players
-local scrolling = Instance.new("ScrollingFrame")
-scrolling.Size = UDim2.new(1, -20, 1, -60)
-scrolling.Position = UDim2.new(0, 10, 0, 50)
-scrolling.CanvasSize = UDim2.new(0, 0, 0, 0)
-scrolling.BackgroundTransparency = 1
-scrolling.Parent = frame
-
--- Sample Button Template
-local sampleButton = Instance.new("TextButton")
-sampleButton.Size = UDim2.new(1, -10, 0, 40)
-sampleButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-sampleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-sampleButton.Visible = false
-sampleButton.Parent = scrolling
-
--- Function to update player list
+-- Function لتحديث قائمة اللاعبين
 local function updatePlayerList()
-	-- Clear old buttons
-	for _, child in ipairs(scrolling:GetChildren()) do
-		if child:IsA("TextButton") then
-			child:Destroy()
-		end
-	end
-
-	local yPos = 0
-	for _, p in ipairs(Players:GetPlayers()) do
-		if p ~= player then
-			local btn = sampleButton:Clone()
-			btn.Visible = true
-			btn.Text = p.Name
-			btn.Position = UDim2.new(0, 0, 0, yPos)
-			btn.Parent = scrolling
-
-			btn.MouseButton1Click:Connect(function()
-				print("تعليمياً: ضغطت على اللاعب "..p.Name)
-				-- مثال تعليمية: عرض رسالة، يمكنك إضافة أي شيء للتجربة
-				local notification = Instance.new("TextLabel")
-				notification.Size = UDim2.new(1, 0, 0, 30)
-				notification.Position = UDim2.new(0, 0, 0, yPos + 45)
-				notification.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-				notification.TextColor3 = Color3.fromRGB(255, 255, 255)
-				notification.Text = "وظائف تعليمية هنا"
-				notification.Parent = scrolling
-				TweenService:Create(notification, TweenInfo.new(2), {BackgroundTransparency = 1, TextTransparency = 0.5}):Play()
-			end)
-			yPos = yPos + 50
-		end
-	end
-	scrolling.CanvasSize = UDim2.new(0, 0, 0, yPos)
+    Frame:ClearAllChildren()
+    UIListLayout.Parent = Frame
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local btn = Instance.new("TextButton")
+            btn.Size = UDim2.new(1, 0, 0, 30)
+            btn.Text = player.Name
+            btn.Parent = Frame
+            btn.MouseButton1Click:Connect(function()
+                -- تحريك الكاميرا إلى اللاعب
+                local targetPos = player.Character.HumanoidRootPart.Position + Vector3.new(0,5,0)
+                local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Linear)
+                local tween = TweenService:Create(Camera, tweenInfo, {CFrame = CFrame.new(targetPos)})
+                tween:Play()
+                Frame.Visible = false
+            end)
+        end
+    end
 end
 
--- Update player list initially and on join/leave
-updatePlayerList()
-Players.PlayerAdded:Connect(updatePlayerList)
-Players.PlayerRemoving:Connect(updatePlayerList)
-
--- Toggle GUI with G
+-- Toggle GUI عند الضغط على T
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
-	if gameProcessed then return end
-	if input.UserInputType == Enum.UserInputType.Keyboard then
-		if input.KeyCode == Enum.KeyCode.G then
-			frame.Visible = not frame.Visible
-		end
-	end
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.T then
+        Frame.Visible = not Frame.Visible
+        if Frame.Visible then
+            updatePlayerList()
+        end
+    end
 end)
